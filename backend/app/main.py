@@ -1,6 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import plaid
+from app.models.user import Base
+from app.database import engine
+
+# Create tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 

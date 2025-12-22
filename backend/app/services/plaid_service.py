@@ -5,6 +5,7 @@ from plaid.model.country_code import CountryCode
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
 from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
+from plaid.model.investments_holdings_get_request import InvestmentsHoldingsGetRequest
 import os
 from dotenv import load_dotenv
 
@@ -39,3 +40,17 @@ def exchange_public_token(public_token: str):
     request = ItemPublicTokenExchangeRequest(public_token=public_token)
     response = client.item_public_token_exchange(request)
     return response['access_token']
+def get_holdings(access_token: str):
+    """Fetch investment holdings using access token"""
+    request = InvestmentsHoldingsGetRequest(access_token=access_token)
+    response = client.investments_holdings_get(request)
+
+    holdings = []
+    for holding in response['holdings']:
+        holdings.append({
+            'symbol': holding['security']['ticker_symbol'],
+            'quantity': holding['quantity'],
+            'cost_basis': holding['cost_basis'],
+            'institution_value': holding['institution_value']
+        })
+    return holdings

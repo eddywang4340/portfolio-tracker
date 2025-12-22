@@ -1,7 +1,31 @@
-fastapi 
-uvicorn 
-python-dotenv 
-plaid-python 
-httpx 
-sqlalchemy 
+# Web Framework
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Environment Variables
+python-dotenv
+
+# Plaid Integration
+plaid-python
+
+# HTTP Client
+httpx
+requests
+
+# Database
+sqlalchemy
 psycopg2-binary
+
+# Pydantic
+pydantic
+
+# Market Data
+yfinance
+
+# Machine Learning (for later)
+# pandas
+# scikit-learn
+# transformers
+# torch
+# newsapi-python

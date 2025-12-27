@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import AllocationChart from './AllocationChart';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 interface Position {
     symbol: string;
@@ -19,53 +22,140 @@ interface Portfolio {
     positions: Position[];
 }
 
-const Dashboard = ({ userId }: { userId: number }) => {
+interface DashboardProps {
+    userId: number;
+}
+
+const Dashboard = ({ userId }: DashboardProps) => {
     const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         loadPortfolio();
     }, [userId]);
 
     const loadPortfolio = async () => {
-        const res = await axios.get('https://localhost:8000/plaid/portfolio/${userId');
-        setPortfolio(res.data);
+        try {
+            setLoading(true);
+            await axios.post(`${API_URL}/plaid/sync_portfolio?user_id=${userId}`);
+            await axios.post(`${API_URL}/plaid/update_prices/${userId}`);
+            const res = await axios.get(`${API_URL}/plaid/portfolio/${userId}`);
+            setPortfolio(res.data);
+        } catch (err) {
+            console.error('Error loading portfolio:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    if (!portfolio) return <div>Loading...</div>
+    if (loading) {
+    return <div style={{ textAlign: 'center', padding: '40px' }}>Loading portfolio...</div>;
+  }
+
+  if (!portfolio) {
+    return <div style={{ textAlign: 'center', padding: '40px' }}>Error loading portfolio</div>;
+  }
 
     return (
-        <div className="dashboard">
-            <div className="summary">
-                <h2>Portfolio Value: ${portfolio.total_value.toFixed(2)}</h2>
-                <p>Total Gain/Loss: ${portfolio.total_gain_loss.toFixed(2)} ({portfolio.total_gain_loss_pct.toFixed(2)}%)</p>
-            </div>
+    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ marginBottom: '40px' }}>
+        <h1>My Portfolio</h1>
+        <button 
+          onClick={loadPortfolio}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#0066cc',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginTop: '10px'
+          }}
+        >
+          Refresh Portfolio
+        </button>
+      </div>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Symbol</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                        <th>Value</th>
-                        <th>Gain/Loss</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {portfolio.positions.map(pos => (
-                        <tr key={pos.symbol}>
-                            <td>{pos.symbol}</td>
-                            <td>{pos.quantity}</td>
-                            <td>${pos.current_price.toFixed(2)}</td>
-                            <td>${pos.current_value.toFixed(2)}</td>
-                            <td className={pos.gain_loss >= 0 ? 'positive' : 'negative'}>
-                                ${pos.gain_loss.toFixed(2)} ({pos.gain_loss_pct.toFixed(2)}%)
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: '1fr 1fr', 
+        gap: '20px',
+        marginBottom: '40px' 
+      }}>
+        <div style={{ 
+          padding: '20px', 
+          backgroundColor: '#f5f5f5', 
+          borderRadius: '8px' 
+        }}>
+          <h3>Total Value</h3>
+          <p style={{ fontSize: '32px', fontWeight: 'bold', margin: '10px 0' }}>
+            ${portfolio.total_value.toFixed(2)}
+          </p>
         </div>
-    );
+        
+        <div style={{ 
+          padding: '20px', 
+          backgroundColor: portfolio.total_gain_loss >= 0 ? '#e8f5e9' : '#ffebee', 
+          borderRadius: '8px' 
+        }}>
+          <h3>Total Gain/Loss</h3>
+          <p style={{ 
+            fontSize: '32px', 
+            fontWeight: 'bold', 
+            margin: '10px 0',
+            color: portfolio.total_gain_loss >= 0 ? '#2e7d32' : '#c62828'
+          }}>
+            ${portfolio.total_gain_loss.toFixed(2)} ({portfolio.total_gain_loss_pct.toFixed(2)}%)
+          </p>
+        </div>
+      </div>
+
+      {portfolio.positions.length > 0 && (
+        <div style={{ marginBottom: '40px' }}>
+          <h2>Asset Allocation</h2>
+          <AllocationChart positions={portfolio.positions} />
+        </div>
+      )}
+
+      <div>
+        <h2>Holdings</h2>
+        <table style={{ 
+          width: '100%', 
+          borderCollapse: 'collapse',
+          backgroundColor: 'white',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f5f5f5' }}>
+              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Symbol</th>
+              <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>Quantity</th>
+              <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>Price</th>
+              <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>Value</th>
+              <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid #ddd' }}>Gain/Loss</th>
+            </tr>
+          </thead>
+          <tbody>
+            {portfolio.positions.map(pos => (
+              <tr key={pos.symbol} style={{ borderBottom: '1px solid #eee' }}>
+                <td style={{ padding: '12px', fontWeight: 'bold' }}>{pos.symbol}</td>
+                <td style={{ padding: '12px', textAlign: 'right' }}>{pos.quantity}</td>
+                <td style={{ padding: '12px', textAlign: 'right' }}>${pos.current_price.toFixed(2)}</td>
+                <td style={{ padding: '12px', textAlign: 'right' }}>${pos.current_value.toFixed(2)}</td>
+                <td style={{ 
+                  padding: '12px', 
+                  textAlign: 'right',
+                  color: pos.gain_loss >= 0 ? '#2e7d32' : '#c62828',
+                  fontWeight: 'bold'
+                }}>
+                  ${pos.gain_loss.toFixed(2)} ({pos.gain_loss_pct.toFixed(2)}%)
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;

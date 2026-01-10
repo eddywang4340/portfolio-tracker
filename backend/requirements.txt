@@ -27,5 +27,6 @@ yfinance
 pandas
 scikit-learn
 numpy
+transformers
 ta
 newsapi-python

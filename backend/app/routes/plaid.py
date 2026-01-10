@@ -17,9 +17,13 @@ async def create_link_token():
     return {"link_token": link_token}
 
 @router.post("/exchange_public_token")
-async def exchange_token(request: ExchangeTokenRequest):
+async def exchange_token(request: ExchangeTokenRequest, db: Session = Depends(get_db)):
     access_token = plaid_service.exchange_public_token(request.public_token)
-    return {"access_token": access_token}
+    user = User(plaid_access_token=access_token)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return {"user_id": user.id, "access_token": access_token}
 
 @router.post("/sync_portfolio")
 async def sync_portfolio(user_id: int, db: Session = Depends(get_db)):

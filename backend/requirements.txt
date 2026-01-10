@@ -24,8 +24,8 @@ pydantic
 yfinance
 
 # Machine Learning (for later)
-# pandas
-# scikit-learn
-# transformers
-# torch
-# newsapi-python
+pandas
+scikit-learn
+numpy
+ta
+newsapi-python

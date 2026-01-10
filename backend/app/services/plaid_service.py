@@ -45,12 +45,26 @@ def get_holdings(access_token: str):
     request = InvestmentsHoldingsGetRequest(access_token=access_token)
     response = client.investments_holdings_get(request)
 
+    securities_map = {}
+    if 'securities' in response and response['securities']:
+        for security in response['securities']:
+            security_id = security.get('security_id')
+            if security_id:
+                securities_map[security_id] = security
+
+
     holdings = []
-    for holding in response['holdings']:
-        holdings.append({
-            'symbol': holding['security']['ticker_symbol'],
-            'quantity': holding['quantity'],
-            'cost_basis': holding['cost_basis'],
-            'institution_value': holding['institution_value']
-        })
+    if 'holdings' in response and response['holdings']:
+        for holding in response['holdings']:
+            security_id = holding.get('security_id')
+            security = securities_map.get(security_id, {})
+            ticker = security.get('ticker_symbol')
+
+            if ticker:
+                holdings.append({
+                    'symbol': ticker,
+                    'quantity': holding['quantity'],
+                    'cost_basis': holding['cost_basis'],
+                    'institution_value': holding['institution_value']
+                })
     return holdings

@@ -7,7 +7,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 interface Position {
     symbol: string;
     quantity: number;
-    current_price: number;
+    current_price: number | null;
     current_value: number;
     cost_basis: number;
     gain_loss: number;
@@ -136,20 +136,37 @@ const Dashboard = ({ userId }: DashboardProps) => {
           </thead>
           <tbody>
             {portfolio.positions.map(pos => (
-              <tr key={pos.symbol} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '12px', fontWeight: 'bold' }}>{pos.symbol}</td>
-                <td style={{ padding: '12px', textAlign: 'right' }}>{pos.quantity}</td>
-                <td style={{ padding: '12px', textAlign: 'right' }}>${pos.current_price.toFixed(2)}</td>
-                <td style={{ padding: '12px', textAlign: 'right' }}>${pos.current_value.toFixed(2)}</td>
-                <td style={{ 
-                  padding: '12px', 
-                  textAlign: 'right',
-                  color: pos.gain_loss >= 0 ? '#2e7d32' : '#c62828',
-                  fontWeight: 'bold'
-                }}>
-                  ${pos.gain_loss.toFixed(2)} ({pos.gain_loss_pct.toFixed(2)}%)
-                </td>
-              </tr>
+                <tr key={pos.symbol} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '12px', fontWeight: 'bold' }}>{pos.symbol}</td>
+                    <td style={{ padding: '12px', textAlign: 'right' }}>{pos.quantity}</td>
+                    <td style={{ padding: '12px', textAlign: 'right' }}>
+                        {pos.current_price !== null ? (
+                            `$${pos.current_price.toFixed(2)}`
+                        ) : (
+                            <span style={{ color: '#999', fontStyle: 'italic' }}>Price unavailable</span>
+                        )}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'right' }}>
+                        {pos.current_price !== null ? (
+                            `$${pos.current_value.toFixed(2)}`
+                        ) : (
+                            <span style={{ color: '#999', fontStyle: 'italic' }}>—</span>
+                        )}
+                    </td>
+                    <td style={{ 
+                        padding: '12px', 
+                        textAlign: 'right',
+                        color: pos.current_price !== null ? (pos.gain_loss >= 0 ? '#2e7d32' : '#c62828') : '#999',
+                        fontWeight: pos.current_price !== null ? 'bold' : 'normal',
+                        fontStyle: pos.current_price === null ? 'italic' : 'normal'
+                    }}>
+                        {pos.current_price !== null ? (
+                            `$${pos.gain_loss.toFixed(2)} (${pos.gain_loss_pct.toFixed(2)}%)`
+                        ) : (
+                            '—'
+                        )}
+                    </td>
+                </tr>
             ))}
           </tbody>
         </table>

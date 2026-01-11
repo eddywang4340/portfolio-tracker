@@ -147,7 +147,7 @@ async def create_test_portfolio(db: Session = Depends(get_db)):
         "message": "Test portfolio created"
     }
 
-@router.get("ml/predict/{symbol}")
+@router.get("/ml/predict/{symbol}")
 async def predict_stock_price(symbol: str):
     """Get ML price prediction for a single stock"""
     try:
@@ -164,7 +164,7 @@ async def predict_stock_price(symbol: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.get("ml/portfolio-preditions/{user_id}")
+@router.get("/ml/portfolio-predictions/{user_id}")
 async def get_portfolio_predictions(user_id: int, db: Session = Depends(get_db)):
     """Get ML predictions for all holdings in a user's portfolio"""
     user = db.query(User).filter(User.id == user_id).first()

@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.services import plaid_service, market_data
 from app.database import get_db
 from app.models.user import User, Holding
 from datetime import datetime, timezone
+from app.services.ml_predictor import StockPredictor
 
 router = APIRouter(prefix="/plaid", tags=["plaid"])
 
@@ -144,4 +145,59 @@ async def create_test_portfolio(db: Session = Depends(get_db)):
         "user_id": user.id,
         "holdings_created": len(test_holdings),
         "message": "Test portfolio created"
+    }
+
+@router.get("ml/predict/{symbol}")
+async def predict_stock_price(symbol: str):
+    """Get ML price prediction for a single stock"""
+    try:
+        predictor = StockPredictor()
+        result = predictor.predict_next_day(symbol)
+        
+        if result is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Unable to generate prediction for {symbol}. Insufficient data or invalid symbol."
+            )
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("ml/portfolio-preditions/{user_id}")
+async def get_portfolio_predictions(user_id: int, db: Session = Depends(get_db)):
+    """Get ML predictions for all holdings in a user's portfolio"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    holdings = db.query(Holding).filter(Holding.user_id == user.id).all()
+
+    if not holdings:
+        raise HTTPException(status_code=404, detail="No holdings found for this user")
+
+    predictor = StockPredictor()
+    predictions = []
+
+    for holding in holdings:
+        try:
+            prediction = predictor.predict_next_day(holding.symbol)
+            if prediction:
+                predictions.append({
+                    "symbol": holding.symbol,
+                    "quantity": holding.quantity,
+                    "current_price": prediction['current_price'],
+                    "predicted_price": prediction['predicted_price'],
+                    "change_pct": prediction['change_pct'],
+                    "confidence": prediction['confidence'],
+                    "potential_gain_loss": (prediction['predicted_price'] - prediction['current_price']) * holding.quantity
+                })
+        except Exception as e:
+            print(f"Error predicting for {holding.symbol}: {str(e)}")
+            continue
+    
+    return {
+        "user_id": user.id,
+        "predictions_count": len(predictions),
+        "predictions": predictions
     }

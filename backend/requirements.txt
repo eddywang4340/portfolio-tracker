@@ -28,5 +28,6 @@ pandas
 scikit-learn
 numpy
 transformers
+torch
 ta
 newsapi-python

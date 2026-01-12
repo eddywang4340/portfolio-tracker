@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes import plaid
 from app.models.user import Base
 from app.database import engine
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Create tables
 Base.metadata.create_all(bind=engine)

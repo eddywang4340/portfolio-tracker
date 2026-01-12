@@ -225,7 +225,7 @@ async def get_portfolio_insights(user_id: int, db: Session = Depends(get_db)):
     if not holdings:
         raise HTTPException(status_code=404, detail="No holdings found for this user")
     
-    predictor = StockPredictor
+    predictor = StockPredictor()
     analyzer = SentimentAnalyzer()
     insights = []
 

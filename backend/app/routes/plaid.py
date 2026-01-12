@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models.user import User, Holding
 from datetime import datetime, timezone
 from app.services.ml_predictor import StockPredictor
+from app.services.sentiment_analyzer import SentimentAnalyzer
 
 router = APIRouter(prefix="/plaid", tags=["plaid"])
 
@@ -200,4 +201,51 @@ async def get_portfolio_predictions(user_id: int, db: Session = Depends(get_db))
         "user_id": user.id,
         "predictions_count": len(predictions),
         "predictions": predictions
+    }
+
+@router.get("/ml/sentiment/{symbol}")
+async def get_stock_sentiment(symbol: str):
+    """Get news sentiment analysis for a stock"""
+    try:
+        analyzer = SentimentAnalyzer()
+        result = analyzer.analyze_stock_sentiment(symbol)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/ml/portfolio-insights/{user_id}")
+async def get_portfolio_insights(user_id: int, db: Session = Depends(get_db)):
+    """Get sentiment insights for all holdings in a user's portfolio"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    holdings = db.query(Holding).filter(Holding.user_id == user.id).all()
+
+    if not holdings:
+        raise HTTPException(status_code=404, detail="No holdings found for this user")
+    
+    predictor = StockPredictor
+    analyzer = SentimentAnalyzer()
+    insights = []
+
+    for holding in holdings:
+        try:
+            prediction = predictor.predict_next_day(holding.symbol)
+            sentiment = analyzer.analyze_stock_sentiment(holding.symbol)
+            if prediction:
+                insights.append({
+                    "symbol": holding.symbol,
+                    "quantity": holding.quantity,
+                    "prediction": prediction,
+                    "sentiment": sentiment
+                })
+        except Exception as e:
+            print(f"Error analyzing {holding.symbol}: {str(e)}")
+            continue
+    
+    return {
+        "user_id": user.id,
+        "insights_count": len(insights),
+        "insights": insights
     }

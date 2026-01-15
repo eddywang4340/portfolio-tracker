@@ -1,0 +1,107 @@
+.ml-insights {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 12px;
+}
+
+.prediction-section,
+.sentiment-section {
+  margin-bottom: 16px;
+}
+
+.prediction-section h4,
+.sentiment-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.prediction-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.current-price {
+  color: #111827;
+  font-weight: 500;
+}
+
+.arrow {
+  color: #9ca3af;
+}
+
+.predicted-price {
+  font-weight: 600;
+}
+
+.predicted-price.positive {
+  color: #10b981;
+}
+
+.predicted-price.negative {
+  color: #ef4444;
+}
+
+.change {
+  font-size: 14px;
+}
+
+.change.positive {
+  color: #10b981;
+}
+
+.change.negative {
+  color: #ef4444;
+}
+
+.confidence {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.sentiment-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sentiment-score .label {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.sentiment-score .score {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sentiment-bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.sentiment-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.news-count {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.ml-insights.loading,
+.ml-insights.error {
+  text-align: center;
+  color: #6b7280;
+  padding: 20px;
+}

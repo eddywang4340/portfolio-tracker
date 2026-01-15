@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import AllocationChart from './AllocationChart';
+import MLInsights from './MLInsights';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -29,6 +30,7 @@ interface DashboardProps {
 const Dashboard = ({ userId }: DashboardProps) => {
     const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
     const [loading, setLoading] = useState(true);
+    const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
 
     useEffect(() => {
         loadPortfolio();
@@ -136,37 +138,62 @@ const Dashboard = ({ userId }: DashboardProps) => {
           </thead>
           <tbody>
             {portfolio.positions.map(pos => (
-                <tr key={pos.symbol} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '12px', fontWeight: 'bold' }}>{pos.symbol}</td>
-                    <td style={{ padding: '12px', textAlign: 'right' }}>{pos.quantity}</td>
-                    <td style={{ padding: '12px', textAlign: 'right' }}>
-                        {pos.current_price !== null ? (
-                            `$${pos.current_price.toFixed(2)}`
-                        ) : (
-                            <span style={{ color: '#999', fontStyle: 'italic' }}>Price unavailable</span>
-                        )}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right' }}>
-                        {pos.current_price !== null ? (
-                            `$${pos.current_value.toFixed(2)}`
-                        ) : (
-                            <span style={{ color: '#999', fontStyle: 'italic' }}>—</span>
-                        )}
-                    </td>
-                    <td style={{ 
-                        padding: '12px', 
-                        textAlign: 'right',
-                        color: pos.current_price !== null ? (pos.gain_loss >= 0 ? '#2e7d32' : '#c62828') : '#999',
-                        fontWeight: pos.current_price !== null ? 'bold' : 'normal',
-                        fontStyle: pos.current_price === null ? 'italic' : 'normal'
-                    }}>
-                        {pos.current_price !== null ? (
-                            `$${pos.gain_loss.toFixed(2)} (${pos.gain_loss_pct.toFixed(2)}%)`
-                        ) : (
-                            '—'
-                        )}
-                    </td>
+              <>
+                <tr 
+                  key={pos.symbol} 
+                  style={{ 
+                    borderBottom: '1px solid #eee',
+                    cursor: 'pointer',
+                    backgroundColor: expandedSymbol === pos.symbol ? '#f9fafb' : 'transparent'
+                  }}
+                  onClick={() => setExpandedSymbol(expandedSymbol === pos.symbol ? null : pos.symbol)}
+                >
+                  <td style={{ padding: '12px', fontWeight: 'bold' }}>
+                    <span>{pos.symbol}</span>
+                    <span style={{ marginLeft: '8px', fontSize: '12px', color: '#999' }}>
+                      {expandedSymbol === pos.symbol ? '▼' : '▶'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px', textAlign: 'right' }}>{pos.quantity}</td>
+                  <td style={{ padding: '12px', textAlign: 'right' }}>
+                    {pos.current_price !== null ? (
+                      `$${pos.current_price.toFixed(2)}`
+                    ) : (
+                      <span style={{ color: '#999', fontStyle: 'italic' }}>Price unavailable</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '12px', textAlign: 'right' }}>
+                    {pos.current_price !== null ? (
+                      `$${pos.current_value.toFixed(2)}`
+                    ) : (
+                      <span style={{ color: '#999', fontStyle: 'italic' }}>—</span>
+                    )}
+                  </td>
+                  <td style={{ 
+                    padding: '12px', 
+                    textAlign: 'right',
+                    color: pos.current_price !== null ? (pos.gain_loss >= 0 ? '#2e7d32' : '#c62828') : '#999',
+                    fontWeight: pos.current_price !== null ? 'bold' : 'normal',
+                    fontStyle: pos.current_price === null ? 'italic' : 'normal'
+                  }}>
+                    {pos.current_price !== null ? (
+                      `$${pos.gain_loss.toFixed(2)} (${pos.gain_loss_pct.toFixed(2)}%)`
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                 </tr>
+                {expandedSymbol === pos.symbol && pos.current_price !== null && (
+                  <tr key={`${pos.symbol}-insights`}>
+                    <td colSpan={5} style={{ padding: '0', backgroundColor: '#f9fafb' }}>
+                      <MLInsights 
+                        symbol={pos.symbol} 
+                        currentPrice={pos.current_price} 
+                      />
+                    </td>
+                  </tr>
+                )}
+              </>
             ))}
           </tbody>
         </table>

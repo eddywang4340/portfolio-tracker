@@ -38,6 +38,51 @@ class StockPredictor:
         data = data.dropna()
         return data
     
+    def calculate_confidence(self, X_test_scaled, current_price):
+        """
+        Calculate prediction confidence based on:
+        1. Variance among individual tree predictions
+        2. Coefficient of variation (relative standard deviation)
+        3. 95% prediction interval
+        """
+        tree_predictions = np.array([tree.predict(X_test_scaled)[0] for tree in self.model.estimators_])
+        prediction_std = np.std(tree_predictions)
+        mean_prediction = np.mean(tree_predictions)
+        relative_std = (prediction_std / abs(mean_prediction)) * 100 if mean_prediction != 0 else 100
+
+        # Calculate confidence score (inverse of relative std)
+        # Lower variance among trees = higher confidence
+        if relative_std < 0.5:
+            confidence_score = 95
+            confidence_label = "high"
+        elif relative_std < 1.0:
+            confidence_score = 85
+            confidence_label = "high"
+        elif relative_std < 2.0:
+            confidence_score = 70
+            confidence_label = "medium"
+        elif relative_std < 3.0:
+            confidence_score = 55
+            confidence_label = "medium"
+        else:
+            confidence_score = 40
+            confidence_label = "low"
+
+        # Calculate 95% prediction interval
+        z_score = 1.96  # 95% confidence interval
+        margin = z_score * prediction_std
+
+        return {
+            "score": int(confidence_score),
+            "label": confidence_label,
+            "std": float(prediction_std),
+            "relative_std_pct": float(relative_std),
+            "prediction_interval": {
+                "lower": float(mean_prediction - margin),
+                "upper": float(mean_prediction + margin)
+            }
+        }
+    
     def predict_next_day(self, symbol: str):
         """Predict next day's closing price"""
         df = self.get_features(symbol)
@@ -66,9 +111,18 @@ class StockPredictor:
         prediction = self.model.predict(X_test_scaled)[0]
         current_price = df['Close'].iloc[-1]
 
+        # Calculate confidence metrics
+        confidence_data = self.calculate_confidence(X_test_scaled, current_price)
+
         return {
             "current_price": float(current_price),
             "predicted_price": float(prediction),
             "change_pct": float(((prediction - current_price) / current_price) * 100),
-            "confidence": "medium" # TODO: Add confidence calculation
+            "confidence": confidence_data["label"],
+            "confidence_score": confidence_data["score"],
+            "prediction_interval": confidence_data["prediction_interval"],
+            "confidence_details": {
+                "std_deviation": confidence_data["std"],
+                "relative_std_pct": confidence_data["relative_std_pct"]
+            }
         }

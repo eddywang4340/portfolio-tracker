@@ -16,6 +16,11 @@ function App() {
     setUseTestUser(true);
   };
 
+  const handleSignOut = () => {
+    setUserId(null);
+    setUseTestUser(false);
+  };
+
   return (
     <div className="App">
       {!userId ? (
@@ -53,7 +58,7 @@ function App() {
           </div>
         </div>
       ) : (
-        <Dashboard userId={userId} />
+        <Dashboard userId={userId} onSignOut={handleSignOut} isTestMode={useTestUser} />
       )}
     </div>
   );

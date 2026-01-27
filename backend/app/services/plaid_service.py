@@ -11,8 +11,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Environment configuration - NEW CODE
+PLAID_ENV = os.getenv('PLAID_ENV', 'sandbox')
+env_map = {
+    'sandbox': plaid.Environment.Sandbox,
+    'development': plaid.Environment.Development,
+    'production': plaid.Environment.Production
+}
+
 configuration = plaid.Configuration(
-    host=plaid.Environment.Sandbox,
+    host=env_map.get(PLAID_ENV, plaid.Environment.Sandbox),
     api_key={
         'clientId': os.getenv('PLAID_CLIENT_ID'),
         'secret': os.getenv('PLAID_SECRET'),
@@ -30,7 +38,7 @@ def create_link_token():
         client_name="Portfolio Tracker",
         country_codes=[CountryCode('US'), CountryCode('CA')],
         language='en',
-        user=LinkTokenCreateRequestUser(client_user_id='test-user')
+        user=LinkTokenCreateRequestUser(client_user_id='test-user'),
     )
     response = client.link_token_create(request)
     return response['link_token']
